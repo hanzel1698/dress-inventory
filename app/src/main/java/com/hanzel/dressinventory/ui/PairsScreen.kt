@@ -75,7 +75,7 @@ fun PairsScreen(data: AppData) {
                             Spacer(Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    "${p.top.name} + ${p.bottom.name}",
+                                    "${p.top.code.ifBlank { p.top.name }} + ${p.bottom.code.ifBlank { p.bottom.name }}",
                                     style = MaterialTheme.typography.titleSmall,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,

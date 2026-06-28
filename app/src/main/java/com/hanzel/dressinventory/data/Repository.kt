@@ -20,8 +20,14 @@ class Repository(private val context: Context) {
     private val _data = MutableStateFlow(load())
     val data: StateFlow<AppData> = _data.asStateFlow()
 
-    private fun load(): AppData =
-        runCatching { json.decodeFromString<AppData>(file.readText()) }.getOrDefault(AppData())
+    private fun load(): AppData {
+        val raw = runCatching { json.decodeFromString<AppData>(file.readText()) }.getOrDefault(AppData())
+        val migrated = raw.copy(dresses = assignMissingDressCodes(raw.dresses))
+        if (migrated.dresses != raw.dresses) {
+            runCatching { file.writeText(json.encodeToString(AppData.serializer(), migrated)) }
+        }
+        return migrated
+    }
 
     @Synchronized
     private fun persist(d: AppData) {
@@ -35,9 +41,10 @@ class Repository(private val context: Context) {
         if (old?.photoPath != null && old.photoPath != dress.photoPath) {
             runCatching { File(old.photoPath).delete() }
         }
+        val withCode = ensureDressCode(cur.dresses, dress)
         val idx = cur.dresses.indexOfFirst { it.id == dress.id }
-        val list = if (idx >= 0) cur.dresses.toMutableList().apply { set(idx, dress) }
-        else cur.dresses + dress
+        val list = if (idx >= 0) cur.dresses.toMutableList().apply { set(idx, withCode) }
+        else cur.dresses + withCode
         persist(cur.copy(dresses = list))
     }
 

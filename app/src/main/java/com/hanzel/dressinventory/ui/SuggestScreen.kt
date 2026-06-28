@@ -144,12 +144,19 @@ private fun OutfitHalf(dress: Dress, freshness: String, modifier: Modifier = Mod
             modifier = Modifier.fillMaxWidth().height(150.dp).clip(MaterialTheme.shapes.medium),
         )
         Spacer(Modifier.height(8.dp))
-        Text(
-            dress.name,
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (dress.code.isNotBlank()) {
+                DressCodeBadge(dress.code)
+                Spacer(Modifier.width(6.dp))
+            }
+            Text(
+                dress.name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             ColorDot(dress.colorHex, size = 10)
             Spacer(Modifier.width(4.dp))

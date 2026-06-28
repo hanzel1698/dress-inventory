@@ -367,12 +367,19 @@ private fun WearRow(dress: Dress, worn: Boolean, onClick: () -> Unit) {
             )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    dress.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (dress.code.isNotBlank()) {
+                        DressCodeBadge(dress.code)
+                        Spacer(Modifier.width(6.dp))
+                    }
+                    Text(
+                        dress.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 Text(
                     "${dress.colorName} · ${dress.type}",
                     style = MaterialTheme.typography.bodySmall,
