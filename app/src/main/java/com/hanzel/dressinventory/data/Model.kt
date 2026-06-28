@@ -11,6 +11,8 @@ enum class Pattern { SOLID, PATTERNED }
 @Serializable
 data class Dress(
     val id: String,
+    /** Wardrobe ID in global sequence: A1–A9, B1–B9, C1–C9, … */
+    val code: String = "",
     val name: String,
     val category: Category,
     val type: String,

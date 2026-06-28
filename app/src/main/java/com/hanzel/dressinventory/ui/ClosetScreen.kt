@@ -114,12 +114,19 @@ private fun DressCard(dress: Dress, onClick: () -> Unit) {
             }
         }
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                dress.name,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (dress.code.isNotBlank()) {
+                    DressCodeBadge(dress.code)
+                    Spacer(Modifier.width(6.dp))
+                }
+                Text(
+                    dress.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ColorDot(dress.colorHex)

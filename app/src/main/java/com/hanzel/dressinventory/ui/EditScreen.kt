@@ -131,6 +131,18 @@ fun EditScreen(existing: Dress?, vm: AppViewModel, onClose: () -> Unit) {
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            if (existing?.code?.isNotBlank() == true) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Wardrobe ID",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(bottom = 0.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    DressCodeBadge(existing.code)
+                }
+            }
+
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
@@ -244,6 +256,7 @@ fun EditScreen(existing: Dress?, vm: AppViewModel, onClose: () -> Unit) {
                     vm.upsert(
                         Dress(
                             id = existing?.id ?: UUID.randomUUID().toString(),
+                            code = existing?.code.orEmpty(),
                             name = name.trim(),
                             category = category,
                             type = type,

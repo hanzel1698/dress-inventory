@@ -56,6 +56,23 @@ fun DressVisual(dress: Dress, modifier: Modifier = Modifier) {
 }
 
 @Composable
+fun DressCodeBadge(code: String, modifier: Modifier = Modifier) {
+    if (code.isBlank()) return
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = modifier,
+    ) {
+        Text(
+            text = code,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+        )
+    }
+}
+
+@Composable
 fun ColorDot(hex: Long, size: Int = 12) {
     Box(
         modifier = Modifier
