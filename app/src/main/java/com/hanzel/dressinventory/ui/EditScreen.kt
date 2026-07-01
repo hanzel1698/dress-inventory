@@ -2,7 +2,6 @@ package com.hanzel.dressinventory.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -40,18 +38,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.hanzel.dressinventory.AppViewModel
 import com.hanzel.dressinventory.data.BOTTOM_TYPES
-import com.hanzel.dressinventory.data.COLOR_CHART
 import com.hanzel.dressinventory.data.Category
 import com.hanzel.dressinventory.data.Dress
 import com.hanzel.dressinventory.data.TOP_TYPES
@@ -64,7 +61,13 @@ fun EditScreen(existing: Dress?, vm: AppViewModel, onClose: () -> Unit) {
     var category by rememberSaveable { mutableStateOf(existing?.category ?: Category.TOP) }
     var type by rememberSaveable { mutableStateOf(existing?.type ?: "") }
     var colorName by rememberSaveable { mutableStateOf(existing?.colorName ?: "") }
-    var colorHex by rememberSaveable { mutableStateOf(existing?.colorHex ?: 0L) }
+    // Default to a mid-red if no existing colour (gives the picker a visible starting position)
+    var colorHex by rememberSaveable {
+        mutableLongStateOf(
+            if (existing?.colorHex != null && existing.colorHex != 0L) existing.colorHex
+            else 0xFFC03A2BL
+        )
+    }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val types = if (category == Category.TOP) TOP_TYPES else BOTTOM_TYPES
@@ -143,50 +146,47 @@ fun EditScreen(existing: Dress?, vm: AppViewModel, onClose: () -> Unit) {
                 }
             }
 
-            Column {
+            // ── Colour picker ──────────────────────────────────────────────
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SectionLabel("Colour")
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+
+                HsvColorPicker(
+                    initialHex = colorHex,
+                    onColorChanged = { hex, name ->
+                        colorHex = hex
+                        colorName = name
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+
+                // Colour preview strip + name
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    COLOR_CHART.forEach { c ->
-                        val selected = colorName == c.name
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color(c.hex))
-                                .border(
-                                    width = if (selected) 3.dp else 1.dp,
-                                    color = if (selected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-                                    shape = CircleShape,
-                                )
-                                .clickable {
-                                    colorName = c.name
-                                    colorHex = c.hex
-                                },
-                        ) {
-                            if (selected) {
-                                Icon(
-                                    Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = if (isLight(c.hex)) Color.Black else Color.White,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-                if (colorName.isNotBlank()) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        colorName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(colorHex), CircleShape)
+                            .border(
+                                1.5.dp,
+                                MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                                CircleShape,
+                            ),
                     )
+                    Column {
+                        Text(
+                            text = if (colorName.isNotBlank()) colorName else "—",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = "#%06X".format((colorHex and 0xFFFFFFL).toInt()),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
 
@@ -238,13 +238,6 @@ private fun SectionLabel(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleSmall,
-        modifier = Modifier.padding(bottom = 8.dp),
+        modifier = Modifier.padding(bottom = 0.dp),
     )
-}
-
-private fun isLight(hex: Long): Boolean {
-    val r = (hex shr 16) and 0xFF
-    val g = (hex shr 8) and 0xFF
-    val b = hex and 0xFF
-    return (0.299 * r + 0.587 * g + 0.114 * b) > 160
 }
