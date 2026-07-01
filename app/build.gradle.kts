@@ -1,8 +1,22 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+
+fun loadKeystoreProperties(): Properties? {
+    if (!keystorePropertiesFile.exists()) return null
+    val raw = Properties().apply { load(keystorePropertiesFile.inputStream()) }
+    val normalized = Properties()
+    raw.forEach { (key, value) ->
+        normalized[key.toString().trim('\uFEFF', ' ')] = value.toString().trim()
+    }
+    return normalized
 }
 
 android {
@@ -13,13 +27,31 @@ android {
         applicationId = "com.hanzel.dressinventory"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
+    }
+
+    signingConfigs {
+        create("release") {
+            loadKeystoreProperties()?.let { props ->
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+                storePassword = props.getProperty("storePassword")
+                storeFile = rootProject.file(
+                    props.getProperty("storeFile") ?: "keystore/release.jks"
+                )
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = if (loadKeystoreProperties() != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
     compileOptions {
