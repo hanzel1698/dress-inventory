@@ -1,7 +1,6 @@
 package com.hanzel.dressinventory
 
 import android.app.Application
-import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hanzel.dressinventory.data.AppData
@@ -10,7 +9,6 @@ import com.hanzel.dressinventory.data.Repository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -31,9 +29,4 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun toggleWishlistColor(colorName: String) =
         viewModelScope.launch(Dispatchers.IO) { repo.toggleWishlistColor(colorName) }
 
-    fun importPhoto(uri: Uri, onDone: (String?) -> Unit) =
-        viewModelScope.launch(Dispatchers.IO) {
-            val path = repo.importPhoto(uri)
-            withContext(Dispatchers.Main) { onDone(path) }
-        }
 }

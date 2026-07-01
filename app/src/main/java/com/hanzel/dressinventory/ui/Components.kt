@@ -22,37 +22,25 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.hanzel.dressinventory.data.Dress
-import java.io.File
 
-/** Photo if the dress has one, otherwise a soft gradient of its colour. */
+/** Soft gradient swatch using the dress colour. */
 @Composable
 fun DressVisual(dress: Dress, modifier: Modifier = Modifier) {
-    if (dress.photoPath != null && File(dress.photoPath).exists()) {
-        AsyncImage(
-            model = File(dress.photoPath),
-            contentDescription = dress.name,
-            contentScale = ContentScale.Crop,
-            modifier = modifier,
-        )
-    } else {
-        val base = Color(dress.colorHex)
-        Box(
-            modifier = modifier.background(
-                Brush.verticalGradient(
-                    listOf(
-                        lerp(base, Color.White, 0.12f),
-                        base,
-                        lerp(base, Color.Black, 0.18f),
-                    )
+    val base = Color(dress.colorHex)
+    Box(
+        modifier = modifier.background(
+            Brush.verticalGradient(
+                listOf(
+                    lerp(base, Color.White, 0.12f),
+                    base,
+                    lerp(base, Color.Black, 0.18f),
                 )
             )
         )
-    }
+    )
 }
 
 @Composable

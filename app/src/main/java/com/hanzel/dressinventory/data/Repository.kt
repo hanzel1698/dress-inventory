@@ -1,20 +1,15 @@
 package com.hanzel.dressinventory.data
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.util.UUID
 
 class Repository(private val context: Context) {
 
     private val file = File(context.filesDir, "closet.json")
-    private val photosDir = File(context.filesDir, "photos").apply { mkdirs() }
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     private val _data = MutableStateFlow(load())
@@ -79,22 +74,4 @@ class Repository(private val context: Context) {
         persist(cur.copy(shoppingWishlist = newList))
     }
 
-    /** Copies and downscales an image into app storage; returns the saved file path. */
-    fun importPhoto(uri: Uri): String? = runCatching {
-        val resolver = context.contentResolver
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
-        val maxDim = maxOf(bounds.outWidth, bounds.outHeight)
-        if (maxDim <= 0) return null
-        var sample = 1
-        while (maxDim / (sample * 2) >= 1200) sample *= 2
-        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-        val bitmap = resolver.openInputStream(uri)?.use {
-            BitmapFactory.decodeStream(it, null, opts)
-        } ?: return null
-        val out = File(photosDir, "${UUID.randomUUID()}.jpg")
-        out.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }
-        bitmap.recycle()
-        out.absolutePath
-    }.getOrNull()
 }

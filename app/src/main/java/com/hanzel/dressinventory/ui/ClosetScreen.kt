@@ -1,7 +1,6 @@
 package com.hanzel.dressinventory.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,12 +15,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Checkroom
-import androidx.compose.material.icons.outlined.Texture
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import com.hanzel.dressinventory.data.AppData
 import com.hanzel.dressinventory.data.Category
 import com.hanzel.dressinventory.data.Dress
-import com.hanzel.dressinventory.data.Pattern
 
 @Composable
 fun ClosetScreen(data: AppData, onEdit: (Dress) -> Unit) {
@@ -69,7 +64,7 @@ fun ClosetScreen(data: AppData, onEdit: (Dress) -> Unit) {
             EmptyState(
                 icon = Icons.Outlined.Checkroom,
                 title = "Nothing here yet",
-                subtitle = "Tap the + button to add your first piece — give it a name, pick its colour and snap its pattern.",
+                subtitle = "Tap the + button to add your first piece — give it a name, pick its colour and type.",
             )
         } else {
             LazyVerticalGrid(
@@ -90,29 +85,7 @@ fun ClosetScreen(data: AppData, onEdit: (Dress) -> Unit) {
 @Composable
 private fun DressCard(dress: Dress, onClick: () -> Unit) {
     ElevatedCard(onClick = onClick) {
-        Box {
-            DressVisual(dress, modifier = Modifier.fillMaxWidth().height(150.dp))
-            if (dress.pattern == Pattern.PATTERNED) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                    shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                    ) {
-                        Icon(
-                            Icons.Outlined.Texture,
-                            contentDescription = null,
-                            modifier = Modifier.width(14.dp),
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("Pattern", style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-            }
-        }
+        DressVisual(dress, modifier = Modifier.fillMaxWidth().height(150.dp))
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (dress.code.isNotBlank()) {
