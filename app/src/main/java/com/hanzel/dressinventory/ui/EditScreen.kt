@@ -150,7 +150,7 @@ fun EditScreen(existing: Dress?, vm: AppViewModel, onClose: () -> Unit) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SectionLabel("Colour")
 
-                HsvColorPicker(
+                PaletteColorPicker(
                     initialHex = colorHex,
                     onColorChanged = { hex, name ->
                         colorHex = hex
