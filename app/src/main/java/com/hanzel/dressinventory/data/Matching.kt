@@ -34,13 +34,13 @@ private operator fun FloatArray.component1() = this[0]
 private operator fun FloatArray.component2() = this[1]
 private operator fun FloatArray.component3() = this[2]
 
-/** 0..100 score for how well a top and bottom go together (colour + pattern). */
+/** 0..100 score for how well a top and bottom go together by colour. */
 fun matchScore(top: Dress, bottom: Dress): Int {
     val (h1, _, l1) = hsl(top.colorHex)
     val (h2, _, l2) = hsl(bottom.colorHex)
     val nT = top.isNeutral()
     val nB = bottom.isNeutral()
-    var score = when {
+    val score = when {
         nT && nB -> 72 + ((abs(l1 - l2) * 60).toInt()).coerceAtMost(18)
         nT || nB -> 86
         else -> {
@@ -54,11 +54,6 @@ fun matchScore(top: Dress, bottom: Dress): Int {
             }
         }
     }
-    score += when {
-        top.pattern == Pattern.PATTERNED && bottom.pattern == Pattern.PATTERNED -> -20
-        top.pattern != bottom.pattern -> 8
-        else -> 2
-    }
     return score.coerceIn(0, 100)
 }
 
@@ -70,34 +65,24 @@ fun matchLabel(score: Int): String = when {
 }
 
 fun matchReason(top: Dress, bottom: Dress): String {
-    val colour = run {
-        val nT = top.isNeutral()
-        val nB = bottom.isNeutral()
-        val (h1, _, _) = hsl(top.colorHex)
-        val (h2, _, _) = hsl(bottom.colorHex)
-        when {
-            nT && nB -> "Two neutrals — a clean, classic combination"
-            nT -> "${top.colorName} is a neutral that lets ${bottom.colorName} shine"
-            nB -> "${bottom.colorName} grounds the ${top.colorName} nicely"
-            else -> {
-                val diff = abs(h1 - h2).let { minOf(it, 360f - it) }
-                when {
-                    diff <= 18f -> "Tone-on-tone ${top.colorName} and ${bottom.colorName}"
-                    diff <= 40f -> "${top.colorName} and ${bottom.colorName} sit close on the colour wheel"
-                    diff in 150f..210f -> "${top.colorName} pops against ${bottom.colorName} — complementary tones"
-                    else -> "${top.colorName} with ${bottom.colorName} is an adventurous mix"
-                }
+    val nT = top.isNeutral()
+    val nB = bottom.isNeutral()
+    val (h1, _, _) = hsl(top.colorHex)
+    val (h2, _, _) = hsl(bottom.colorHex)
+    return when {
+        nT && nB -> "Two neutrals — a clean, classic combination."
+        nT -> "${top.colorName} is a neutral that lets ${bottom.colorName} shine."
+        nB -> "${bottom.colorName} grounds the ${top.colorName} nicely."
+        else -> {
+            val diff = abs(h1 - h2).let { minOf(it, 360f - it) }
+            when {
+                diff <= 18f -> "Tone-on-tone ${top.colorName} and ${bottom.colorName}."
+                diff <= 40f -> "${top.colorName} and ${bottom.colorName} sit close on the colour wheel."
+                diff in 150f..210f -> "${top.colorName} pops against ${bottom.colorName} — complementary tones."
+                else -> "${top.colorName} with ${bottom.colorName} is an adventurous mix."
             }
         }
     }
-    val pattern = when {
-        top.pattern == Pattern.PATTERNED && bottom.pattern == Pattern.PATTERNED ->
-            "Two patterns compete — wear with confidence!"
-        top.pattern == Pattern.PATTERNED -> "The patterned top stands out over a solid bottom"
-        bottom.pattern == Pattern.PATTERNED -> "The patterned bottom pairs well with a solid top"
-        else -> null
-    }
-    return if (pattern != null) "$colour. $pattern." else "$colour."
 }
 
 fun lastWornBefore(data: AppData, id: String, date: LocalDate): LocalDate? =

@@ -1,9 +1,5 @@
 package com.hanzel.dressinventory.ui
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,10 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.outlined.AddAPhoto
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,7 +30,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -56,50 +48,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
-import coil.compose.AsyncImage
 import com.hanzel.dressinventory.AppViewModel
 import com.hanzel.dressinventory.data.BOTTOM_TYPES
 import com.hanzel.dressinventory.data.COLOR_CHART
 import com.hanzel.dressinventory.data.Category
 import com.hanzel.dressinventory.data.Dress
-import com.hanzel.dressinventory.data.Pattern
 import com.hanzel.dressinventory.data.TOP_TYPES
-import java.io.File
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun EditScreen(existing: Dress?, vm: AppViewModel, onClose: () -> Unit) {
-    val context = LocalContext.current
-
     var name by rememberSaveable { mutableStateOf(existing?.name ?: "") }
     var category by rememberSaveable { mutableStateOf(existing?.category ?: Category.TOP) }
     var type by rememberSaveable { mutableStateOf(existing?.type ?: "") }
     var colorName by rememberSaveable { mutableStateOf(existing?.colorName ?: "") }
     var colorHex by rememberSaveable { mutableStateOf(existing?.colorHex ?: 0L) }
-    var pattern by rememberSaveable { mutableStateOf(existing?.pattern ?: Pattern.SOLID) }
-    var photoPath by rememberSaveable { mutableStateOf(existing?.photoPath) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    var cameraUri by remember { mutableStateOf<Uri?>(null) }
-
-    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        if (ok) cameraUri?.let { uri -> vm.importPhoto(uri) { p -> if (p != null) photoPath = p } }
-    }
-    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let { vm.importPhoto(it) { p -> if (p != null) photoPath = p } }
-    }
-
-    fun launchCamera() {
-        val dir = File(context.cacheDir, "camera").apply { mkdirs() }
-        val file = File(dir, "shot_${UUID.randomUUID()}.jpg")
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        cameraUri = uri
-        takePicture.launch(uri)
-    }
 
     val types = if (category == Category.TOP) TOP_TYPES else BOTTOM_TYPES
     val canSave = name.isNotBlank() && type.isNotBlank() && colorName.isNotBlank()
@@ -178,76 +144,49 @@ fun EditScreen(existing: Dress?, vm: AppViewModel, onClose: () -> Unit) {
             }
 
             Column {
-                SectionLabel("Colour — fine-tune in natural light")
-                ColorWheelPicker(
-                    initialColorHex = if (colorHex == 0L) 0xFFFAFAF7L else colorHex,
-                    onColorSelected = { hex, name ->
-                        colorHex = hex
-                        colorName = name
-                    }
-                )
-            }
-
-            Column {
-                SectionLabel("Pattern")
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    SegmentedButton(
-                        selected = pattern == Pattern.SOLID,
-                        onClick = { pattern = Pattern.SOLID },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    ) { Text("Plain solid") }
-                    SegmentedButton(
-                        selected = pattern == Pattern.PATTERNED,
-                        onClick = { pattern = Pattern.PATTERNED },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                    ) { Text("Patterned") }
-                }
-
-                if (pattern == Pattern.PATTERNED) {
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedButton(onClick = { launchCamera() }, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Outlined.AddAPhoto, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Camera")
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                pickImage.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                SectionLabel("Colour")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    COLOR_CHART.forEach { c ->
+                        val selected = colorName == c.name
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color(c.hex))
+                                .border(
+                                    width = if (selected) 3.dp else 1.dp,
+                                    color = if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                                    shape = CircleShape,
                                 )
-                            },
-                            modifier = Modifier.weight(1f),
+                                .clickable {
+                                    colorName = c.name
+                                    colorHex = c.hex
+                                },
                         ) {
-                            Icon(Icons.Outlined.PhotoLibrary, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Gallery")
-                        }
-                    }
-                    if (photoPath != null) {
-                        Spacer(Modifier.height(12.dp))
-                        Box {
-                            AsyncImage(
-                                model = File(photoPath!!),
-                                contentDescription = "Pattern photo",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp)
-                                    .clip(MaterialTheme.shapes.medium),
-                            )
-                            IconButton(
-                                onClick = { photoPath = null },
-                                modifier = Modifier.align(Alignment.TopEnd),
-                            ) {
+                            if (selected) {
                                 Icon(
-                                    Icons.Outlined.Close,
-                                    contentDescription = "Remove photo",
-                                    tint = Color.White,
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = if (isLight(c.hex)) Color.Black else Color.White,
+                                    modifier = Modifier.size(18.dp),
                                 )
                             }
                         }
                     }
+                }
+                if (colorName.isNotBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        colorName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
@@ -262,8 +201,6 @@ fun EditScreen(existing: Dress?, vm: AppViewModel, onClose: () -> Unit) {
                             type = type,
                             colorName = colorName,
                             colorHex = colorHex,
-                            pattern = pattern,
-                            photoPath = if (pattern == Pattern.PATTERNED) photoPath else null,
                         )
                     )
                     onClose()
