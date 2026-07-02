@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hanzel.dressinventory.data.Dress
+import com.hanzel.dressinventory.releasenotes.WhatsNewGate
 import com.hanzel.dressinventory.ui.ClosetScreen
 import com.hanzel.dressinventory.ui.DressTheme
 import com.hanzel.dressinventory.ui.EditScreen
@@ -56,7 +57,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DressTheme {
-                App()
+                WhatsNewGate {
+                    App()
+                }
             }
         }
     }
