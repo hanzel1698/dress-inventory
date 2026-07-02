@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -7,37 +8,43 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-val keystorePropertiesFile = rootProject.file("keystore.properties")
+data class UploadSigningConfig(
+    val storeFile: File,
+    val storePassword: String,
+    val keyAlias: String,
+    val keyPassword: String,
+)
 
-/**
- * Returns signing properties only when ALL of the following are true:
- *  1. keystore.properties exists on disk.
- *  2. The storeFile path it references points to a file that exists and is
- *     at least 100 bytes (a valid JKS is always several hundred bytes; a
- *     truncated/empty file written by a CI step with missing secrets is not).
- *  3. keyAlias, keyPassword, and storePassword are all non-blank.
- *
- * Returning null causes the release build type to fall back to the debug
- * signing config, which lets the build succeed without crashing on a
- * missing or corrupt keystore.
- */
-fun loadKeystoreProperties(): Properties? {
-    if (!keystorePropertiesFile.exists()) return null
-    val raw = Properties().apply { load(keystorePropertiesFile.inputStream()) }
-    val props = Properties()
-    raw.forEach { (key, value) ->
-        props[key.toString().trim('\uFEFF', ' ')] = value.toString().trim()
+fun resolveUploadSigning(): UploadSigningConfig? {
+    System.getenv("KEYSTORE_FILE")?.takeIf { it.isNotBlank() }?.let { path ->
+        val file = File(path)
+        if (file.isFile && file.length() > 100L) {
+            return UploadSigningConfig(
+                storeFile = file,
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "android",
+                keyAlias = System.getenv("KEY_ALIAS") ?: "androiddebugkey",
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "android",
+            )
+        }
     }
-    // Ensure the actual .jks file is present and non-trivially sized
-    val storeFilePath = props.getProperty("storeFile") ?: return null
-    val jksFile = rootProject.file(storeFilePath)
-    if (!jksFile.exists() || jksFile.length() < 100L) return null
-    // Ensure all required signing fields are filled in
-    listOf("keyAlias", "keyPassword", "storePassword").forEach { key ->
-        if (props.getProperty(key).isNullOrBlank()) return null
+    val centralDir = File(System.getProperty("user.home"), ".android/signing")
+    val centralKeystore = File(centralDir, "upload-keystore.jks")
+    if (centralKeystore.isFile && centralKeystore.length() > 100L) {
+        val props = Properties()
+        File(centralDir, "signing.properties").takeIf { it.isFile }?.inputStream()?.use {
+            props.load(it)
+        }
+        return UploadSigningConfig(
+            storeFile = centralKeystore,
+            storePassword = props.getProperty("storePassword", "android"),
+            keyAlias = props.getProperty("keyAlias", "androiddebugkey"),
+            keyPassword = props.getProperty("keyPassword", "android"),
+        )
     }
-    return props
+    return null
 }
+
+val uploadSigning = resolveUploadSigning()
 
 android {
     namespace = "com.hanzel.dressinventory"
@@ -52,14 +59,12 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            loadKeystoreProperties()?.let { props ->
-                keyAlias = props.getProperty("keyAlias")
-                keyPassword = props.getProperty("keyPassword")
-                storePassword = props.getProperty("storePassword")
-                storeFile = rootProject.file(
-                    props.getProperty("storeFile") ?: "keystore/release.jks"
-                )
+        if (uploadSigning != null) {
+            create("upload") {
+                storeFile = uploadSigning.storeFile
+                storePassword = uploadSigning.storePassword
+                keyAlias = uploadSigning.keyAlias
+                keyPassword = uploadSigning.keyPassword
             }
         }
     }
@@ -67,8 +72,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = if (loadKeystoreProperties() != null) {
-                signingConfigs.getByName("release")
+            signingConfig = if (uploadSigning != null) {
+                signingConfigs.getByName("upload")
             } else {
                 signingConfigs.getByName("debug")
             }
