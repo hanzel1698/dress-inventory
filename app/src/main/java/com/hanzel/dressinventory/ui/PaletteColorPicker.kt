@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import com.hanzel.dressinventory.data.COLOR_CHART
 import com.hanzel.dressinventory.data.ChartColor
+import com.hanzel.dressinventory.data.ntcName
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Grid layout constants
@@ -128,7 +129,14 @@ fun colorToHsv(color: Color): Triple<Float, Float, Float> {
 fun colorToHex(color: Color): Long =
     0xFF000000L or (color.toArgb().toLong() and 0x00FFFFFFL)
 
-/** Finds the nearest named colour in [COLOR_CHART] by Euclidean RGB distance. */
+/**
+ * Returns the closest [ChartColor] for outfit-matching logic (uses the small
+ * curated [COLOR_CHART] which carries the [ChartColor.neutral] flag needed by
+ * [com.hanzel.dressinventory.data.Matching]).
+ *
+ * The display name shown to the user is looked up separately via [ntcName]
+ * (the 1,566-entry NTC dataset) for much more accurate colour labels.
+ */
 fun closestChartColor(hex: Long): ChartColor {
     val r1 = (hex shr 16) and 0xFF
     val g1 = (hex shr 8) and 0xFF
@@ -141,6 +149,15 @@ fun closestChartColor(hex: Long): ChartColor {
         dr * dr + dg * dg + db * db
     } ?: COLOR_CHART.first()
 }
+
+/**
+ * Returns the human-readable colour name for [hex] using the full 1,566-entry
+ * NTC dataset (RGB + HSL blended distance — mirrors the original NTC algorithm).
+ *
+ * This is what gets stored as [com.hanzel.dressinventory.data.Dress.colorName]
+ * and shown to the user on the edit screen and fullscreen colour view.
+ */
+fun colorDisplayName(hex: Long): String = ntcName(hex)
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  PaletteColorPicker composable
@@ -285,7 +302,8 @@ private inline fun hitTest(
 private fun emitColor(row: Int, col: Int, onColorChanged: (Long, String) -> Unit) {
     val argb = PaletteData.ARGB[row][col]
     val hex = 0xFF000000L or (argb.toLong() and 0x00FFFFFFL)
-    onColorChanged(hex, closestChartColor(hex).name)
+    // Use the NTC 1,566-colour dataset for accurate display names
+    onColorChanged(hex, colorDisplayName(hex))
 }
 
 /** Finds the grid cell whose colour is closest to [hex] (Euclidean RGB distance). */
