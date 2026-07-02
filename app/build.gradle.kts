@@ -9,14 +9,34 @@ plugins {
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 
+/**
+ * Returns signing properties only when ALL of the following are true:
+ *  1. keystore.properties exists on disk.
+ *  2. The storeFile path it references points to a file that exists and is
+ *     at least 100 bytes (a valid JKS is always several hundred bytes; a
+ *     truncated/empty file written by a CI step with missing secrets is not).
+ *  3. keyAlias, keyPassword, and storePassword are all non-blank.
+ *
+ * Returning null causes the release build type to fall back to the debug
+ * signing config, which lets the build succeed without crashing on a
+ * missing or corrupt keystore.
+ */
 fun loadKeystoreProperties(): Properties? {
     if (!keystorePropertiesFile.exists()) return null
     val raw = Properties().apply { load(keystorePropertiesFile.inputStream()) }
-    val normalized = Properties()
+    val props = Properties()
     raw.forEach { (key, value) ->
-        normalized[key.toString().trim('\uFEFF', ' ')] = value.toString().trim()
+        props[key.toString().trim('\uFEFF', ' ')] = value.toString().trim()
     }
-    return normalized
+    // Ensure the actual .jks file is present and non-trivially sized
+    val storeFilePath = props.getProperty("storeFile") ?: return null
+    val jksFile = rootProject.file(storeFilePath)
+    if (!jksFile.exists() || jksFile.length() < 100L) return null
+    // Ensure all required signing fields are filled in
+    listOf("keyAlias", "keyPassword", "storePassword").forEach { key ->
+        if (props.getProperty(key).isNullOrBlank()) return null
+    }
+    return props
 }
 
 android {
