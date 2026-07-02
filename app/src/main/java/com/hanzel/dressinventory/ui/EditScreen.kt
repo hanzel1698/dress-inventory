@@ -2,6 +2,7 @@ package com.hanzel.dressinventory.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,6 +70,17 @@ fun EditScreen(existing: Dress?, vm: AppViewModel, onClose: () -> Unit) {
         )
     }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showColorFullscreen by remember { mutableStateOf(false) }
+
+    // ── Fullscreen colour overlay ───────────────────────────────────────────
+    if (showColorFullscreen) {
+        SingleColorFullscreen(
+            hex = colorHex,
+            name = if (colorName.isNotBlank()) colorName else "#%06X".format((colorHex and 0xFFFFFFL).toInt()),
+            onDismiss = { showColorFullscreen = false },
+        )
+        return
+    }
 
     val types = if (category == Category.TOP) TOP_TYPES else BOTTOM_TYPES
     val canSave = name.isNotBlank() && type.isNotBlank() && colorName.isNotBlank()
@@ -159,11 +171,13 @@ fun EditScreen(existing: Dress?, vm: AppViewModel, onClose: () -> Unit) {
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
 
-                // Colour preview strip + name
+                // Colour preview strip + name  (tap → fullscreen colour view)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showColorFullscreen = true },
                 ) {
                     Box(
                         modifier = Modifier

@@ -3,6 +3,7 @@ package com.hanzel.dressinventory.ui
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
@@ -10,16 +11,22 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,14 +42,118 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.delay
+
+/**
+ * Fullscreen colour view opened from the palette picker preview strip.
+ *
+ * - Fills the screen with [hex].
+ * - Shows [name] and the hex code prominently at the top.
+ * - Long-press on the name copies it to the clipboard.
+ * - Long-press on the hex code copies it to the clipboard.
+ * - Tap anywhere else to dismiss.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun SingleColorFullscreen(
+    hex: Long,
+    name: String,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    val hexString = "#%06X".format((hex and 0xFFFFFFL).toInt())
+
+    val view = LocalView.current
+    val activity = remember(view.context) { view.context.findActivity() }
+
+    DisposableEffect(activity) {
+        val ctrl = activity?.window?.let { WindowCompat.getInsetsController(it, view) }
+        ctrl?.hide(WindowInsetsCompat.Type.systemBars())
+        ctrl?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        onDispose { ctrl?.show(WindowInsetsCompat.Type.systemBars()) }
+    }
+
+    val light = remember(hex) { isLight(hex) }
+    val onColor = if (light) Color(0xFF1C1C1E) else Color.White
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(hex))
+            // Dismiss on tap — child combinedClickable areas will intercept their own taps
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDismiss,
+            ),
+    ) {
+        // ── Top: colour name + hex value ─────────────────────────────────
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(horizontal = 28.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.displaySmall,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.SemiBold,
+                color = onColor,
+                modifier = Modifier.combinedClickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onLongClick = {
+                        clipboard.setText(AnnotatedString(name))
+                        Toast.makeText(context, "Copied \"$name\"", Toast.LENGTH_SHORT).show()
+                    },
+                    onClick = {},   // consume tap — prevents dismiss triggering
+                ),
+            )
+            Text(
+                text = hexString,
+                style = MaterialTheme.typography.titleLarge,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Normal,
+                color = onColor.copy(alpha = 0.68f),
+                modifier = Modifier.combinedClickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onLongClick = {
+                        clipboard.setText(AnnotatedString(hexString))
+                        Toast.makeText(context, "Copied $hexString", Toast.LENGTH_SHORT).show()
+                    },
+                    onClick = {},   // consume tap — prevents dismiss triggering
+                ),
+            )
+        }
+
+        // ── Bottom: usage hint ────────────────────────────────────────────
+        Text(
+            text = "Tap to close  ·  Long-press name or # to copy",
+            style = MaterialTheme.typography.bodySmall,
+            color = onColor.copy(alpha = 0.40f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 20.dp),
+        )
+    }
+}
 
 @Composable
 fun FullscreenColorView(
