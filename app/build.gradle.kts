@@ -72,11 +72,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = if (uploadSigning != null) {
-                signingConfigs.getByName("upload")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.getByName("upload")
         }
     }
     compileOptions {
