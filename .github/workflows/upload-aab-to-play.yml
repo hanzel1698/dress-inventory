@@ -7,6 +7,14 @@ on:
         description: Run ID of a play-version-bump-build.yml workflow (optional - uses latest Play build if not specified)
         required: false
         type: string
+      track:
+        description: Play track to upload to
+        required: true
+        default: internal
+        type: choice
+        options:
+          - internal
+          - closed
 
 permissions:
   contents: read
@@ -70,11 +78,26 @@ jobs:
           git log -1 --pretty=%B > release-notes/whatsnew-en-IN
           echo "Wrote release-notes/whatsnew-en-IN"
 
+      - name: Resolve Play track name
+        id: track
+        run: |
+          REQUESTED="${{ github.event.inputs.track || 'internal' }}"
+          case "$REQUESTED" in
+            closed)
+              echo "name=alpha" >> "$GITHUB_OUTPUT"
+              echo "Play API track: alpha (Closed testing)"
+              ;;
+            *)
+              echo "name=$REQUESTED" >> "$GITHUB_OUTPUT"
+              echo "Play API track: $REQUESTED"
+              ;;
+          esac
+
       - name: Upload to Google Play
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.hanzel.dressinventory
           releaseFiles: ${{ steps.download.outputs.aab_path }}
-          tracks: internal
+          tracks: ${{ steps.track.outputs.name }}
           whatsNewDirectory: release-notes

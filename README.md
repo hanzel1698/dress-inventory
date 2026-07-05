@@ -91,6 +91,46 @@ This repo ships signed AABs to the **internal** track via GitHub Actions. Packag
 
 In Play Console: **Testing → Internal testing → Testers**. Add email addresses or a Google Group, then share the opt-in link with testers. They install from the Play Store link (not a direct APK).
 
+### Internal testing shows package name and "Unreviewed"
+
+This is expected. **Internal testing is not reviewed by Google**, so Play may show:
+
+- Temporary app name = package name (`com.hanzel.dressinventory`)
+- **Unreviewed** badge
+- No store icon/description on the Play Store install page
+
+To get the real name (**Dress Inventory**), icon, and descriptions, move to **closed testing** (or production), which triggers Google's first review.
+
+### Promote to closed testing (recommended next step)
+
+**Before you promote**, finish every item on the Play Console **Dashboard** checklist:
+
+1. **Grow → Store presence → Main store listing** — app name, short/long description, 512×512 icon, 1024×500 feature graphic, screenshots (at least 2 phone screenshots)
+2. **Policy → App content** — privacy policy URL, data safety, ads, content rating, target audience
+3. **Release → App integrity** — Play App Signing enabled (default)
+
+**Option A — Promote in Play Console (no new build)**
+
+1. **Testing → Closed testing → Releases**
+2. Click **Promote release** (arrow) on your internal testing release → choose **Closed testing**
+3. **Testing → Closed testing → Testers** — create a list and add emails (or a Google Group)
+4. Review release → **Start rollout to Closed testing**
+5. Wait for review (often a few hours; up to ~7 days). Status moves from **Unreviewed** → **In review** → approved
+
+**Option B — Upload via GitHub Actions**
+
+Run **Upload latest AAB to Google Play** and set **track** to `closed`.
+
+**Tester note:** Users opted into **internal** testing cannot receive **closed** builds until they opt out of internal testing first, then opt in to closed testing via the new link.
+
+### Store listing assets in this repo
+
+| Asset | Path |
+|-------|------|
+| App icon (512×512) | `store-assets/play-store-icon-512.png` |
+| Feature graphic (1024×500) | `store-assets/play-store-feature-graphic-1024x500.png` |
+| Privacy policy | `https://hanzel1698.github.io/dress-inventory/privacy-policy.html` |
+
 ## Project structure
 
 ```
