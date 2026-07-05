@@ -76,6 +76,12 @@ This repo ships signed AABs to the **internal** track via GitHub Actions. Packag
    - `ANDROID_UPLOAD_CERT_SHA1` — SHA-1 of the upload certificate (must match Play Console → App signing → Upload key certificate)
 4. Complete required Play Console forms: **App content** (privacy policy URL, data safety, ads, target audience, content rating). This app stores data only on-device and does not use the network.
 
+   **Privacy policy URL** (after enabling GitHub Pages on the `main` branch `/docs` folder):
+
+   ```
+   https://hanzel1698.github.io/dress-inventory/privacy-policy.html
+   ```
+
 ### Publish a new build
 
 1. **Bump versionCode and Build for Play** — Actions → run `play-version-bump-build.yml`. This increments `versionCode`, commits the bump, builds a signed AAB, and attaches it to a `play-v*` GitHub Release.
